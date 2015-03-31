@@ -1,12 +1,5 @@
 (function($){
     'use strict';
-    var gistGimmick = {
-        name: 'gist',
-        once: function() {
-            $.md.linkGimmick(this, 'gist', gist);
-        }
-    };
-    $.md.registerGimmick(gistGimmick);
 
     function gist($links, opt, href) {
         $().lazygist('init');
@@ -20,6 +13,10 @@
             });
         });
     }
+
+    var gistGimmick = new MDwiki.Core.Gimmick();
+    gistGimmick.addHandler('gist', gist);
+    $.md.wiki.gimmicks.registerGimmick(gistGimmick);
 }(jQuery));
 
 
@@ -170,7 +167,7 @@
             }
 
         } else if( content.indexOf( 'id="gist' ) !== -1 ) {
-            expression = /gist([\d]{1,})/g.exec(content);
+            expression = /https:\/\/gist.github.com\/.*\/(.*)#/.exec(content);
             id = expression[1];
 
             if( id !== undefined ) {

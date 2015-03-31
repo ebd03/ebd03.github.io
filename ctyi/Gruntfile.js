@@ -3,6 +3,9 @@ var createIndex = function (grunt, taskname) {
     var conf = grunt.config('index')[taskname],
         tmpl = grunt.file.read(conf.template);
 
+    var templatesString = grunt.file.read('tmp/templates.html');
+    grunt.config.set('templatesString', templatesString);
+
     // register the task name in global scope so we can access it in the .tmpl file
     grunt.config.set('currentTask', {name: taskname});
 
@@ -15,78 +18,107 @@ module.exports = function(grunt) {
     'use strict';
     // Project configuration.
 
+    // load all grunt tasks matching the `grunt-*` pattern
+    require('load-grunt-tasks')(grunt);
+
     grunt.initConfig({
     // Metadata.
         pkg: {
             name: 'MDwiki',
-            version: '0.6.2'
+            version: '0.7.0'
         },
 
         ownJsFiles: [
             'js/marked.js',
             'js/init.js',
-            'js/logging.js',
-            'js/stage.js',
+            'ts_compiled/mdwiki_ts.js',
             'js/main.js',
             'js/util.js',
-            'js/modules.js',
             'js/basic_skeleton.js',
             'js/bootstrap.js',
-            'js/gimmicker.js',
 
             // gimmicks
-            'js/gimmicks/alerts.js',
+            'js/gimmicks/templating.js',
+            'js/gimmicks/prism.js',
+            /*
+             'js/gimmicks/googlemaps.js',
+             'js/gimmicks/alerts.js',
             'js/gimmicks/colorbox.js',
-            'js/gimmicks/carousel.js',
+            // 'js/gimmicks/carousel.js',
             'js/gimmicks/disqus.js',
+            'js/gimmicks/editme.js',
             'js/gimmicks/facebooklike.js',
             'js/gimmicks/forkmeongithub.js',
-            //'js/gimmicks/github_gist.js',
             'js/gimmicks/gist.js',
-            'js/gimmicks/googlemaps.js',
-            'js/gimmicks/highlight.js',
             'js/gimmicks/iframe.js',
             'js/gimmicks/math.js',
-            // 'js/gimmicks/leaflet.js',
-            'js/gimmicks/themechooser.js',
+            // // 'js/gimmicks/leaflet.js',
             'js/gimmicks/twitter.js',
             'js/gimmicks/youtube_embed.js',
             'js/gimmicks/yuml.js'
+            */
         ],
 
-        // files that we always inline (stuff not available on CDN)
-        internalCssFiles: [
-            'extlib/css/colorbox.css'
+        // REMEMBER:
+        // * ORDER OF FILES IS IMPORTANT
+        // * ALWAYS ADD EACH FILE TO BOTH minified/unminified SECTIONS!
+        cssFiles: [
+            'tmp/main.min.css',
         ],
-        // ONLY PUT ALREADY MINIFIED FILES IN HERE!
-        internalJsFiles: [
-            'extlib/js/jquery.colorbox.min.js'
+        jsFiles: [
+            'bower_components/jquery/jquery.min.js',
+            'extlib/js/jquery.colorbox.min.js',
+            'extlib/js/prism.js',
+            'extlib/js/hogan-3.0.1.js',
+            'bower_components/bootstrap/js/affix.js',
+            'bower_components/bootstrap/js/dropdown.js',
+        ],
+        // for debug builds use unminified versions:
+        unminifiedCssFiles: [
+            'tmp/main.css'
+        ],
+        unminifiedJsFiles: [
+            'bower_components/jquery/jquery.js',
+            'bower_components/bootstrap/js/affix.js',
+            'bower_components/bootstrap/js/dropdown.js',
+            'extlib/js/prism.js',
+            'extlib/js/jquery.colorbox.js',
+            'extlib/js/hogan-3.0.1.js'
         ],
 
-        // files that we inline in the fat release (basically everything)
-        // ONLY PUT ALREADY MINIFIED FILES IN HERE!
-        externalJsFiles: [
-            'extlib/js/jquery-1.8.3.min.js',
-            'extlib/js/bootstrap-3.0.0.min.js',
-            'extlib/js/highlight-7.3.pack.min.js'
-        ],
-        externalCssFiles: [
-            'extlib/css/highlight.github.css',
-            'extlib/css/bootstrap-3.0.0.min.css',
-        ],
+        typescript: {
+            base: {
+                src: ['js/ts/**/*.ts'],
+                dest: 'ts_compiled/mdwiki_ts.js',
+                options: {
+                    //module: 'amd', //or commonjs
+                    target: 'es5', //or es3
+                    basePath: '/js/ts/',
+                    sourcemap: false,
+                    fullSourceMapPath: false,
+                    declaration: false,
+                }
+            }
+        },
 
-        // references we add in the slim release (stuff available on CDN locations)
-        externalJsRefs: [
-            'ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js',
-            'netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js',
-            'yandex.st/highlightjs/7.3/highlight.min.js'
-        ],
-        externalCssRefs: [
-            'netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css',
-            'yandex.st/highlightjs/7.3/styles/github.min.css'
-//            'www.3solarmasses.com/retriever-bootstrap/css/retriever.css'
-//            '3solarmasses.com/corgi-bootstrap/css/corgi.css'
-        ],
+        less: {
+            min: {
+                options: {
+                    compress: true,
+                },
+                files: {
+                    'tmp/main.min.css': 'styles/main.less',
+                },
+            },
+            dev: {
+                options: {
+                    compress: false,
+                },
+                files: {
+                    'tmp/main.css': 'styles/main.less',
+                },
+            },
+        },
 
         concat: {
             options: {
@@ -95,7 +127,7 @@ module.exports = function(grunt) {
             },
             dev: {
                 src: '<%= ownJsFiles %>',
-                dest: 'dist/<%= pkg.name %>.js'
+                dest: 'tmp/<%= pkg.name %>.js'
             }
         },
         uglify: {
@@ -104,17 +136,13 @@ module.exports = function(grunt) {
             },
             dist: {
                 src: '<%= concat.dev.dest %>',
-                dest: 'dist/<%= pkg.name %>.min.js'
+                dest: 'tmp/<%= pkg.name %>.min.js'
             }
         },
         index: {
-            fat: {
+            release: {
                 template: 'index.tmpl',
                 dest: 'dist/mdwiki.html'
-            },
-            slim: {
-                template: 'index.tmpl',
-                dest: 'dist/mdwiki-slim.html'
             },
             debug: {
                 template: 'index.tmpl',
@@ -143,7 +171,11 @@ module.exports = function(grunt) {
                     hljs: true,
                     /* leaflet.js*/
                     L: true,
-                    console: true
+                    console: true,
+                    MDwiki: true,
+                    Prism: true,
+                    alert: true,
+                    Hogan: true
                 }
             },
             /*gruntfile: {
@@ -157,17 +189,11 @@ module.exports = function(grunt) {
             src: ['lib/**/*.js', 'test/**/*.js']
         },
         copy: {
-            release_fat: {
+            release: {
                 expand: false,
                 flatten: true,
                 src: [ 'dist/mdwiki.html' ],
                 dest: 'release/mdwiki-<%= grunt.config("pkg").version %>/mdwiki.html'
-            },
-            release_slim: {
-                expand: false,
-                flatten: true,
-                src: [ 'dist/mdwiki-slim.html' ],
-                dest: 'release/mdwiki-<%= grunt.config("pkg").version %>/mdwiki-slim.html'
             },
             release_debug: {
                 expand: false,
@@ -180,6 +206,20 @@ module.exports = function(grunt) {
                 flatten: true,
                 src: [ 'release_templates/*' ],
                 dest: 'release/mdwiki-<%= grunt.config("pkg").version %>/'
+            },
+            unittests: {
+                files: [{
+                    expand: true,
+                    flatten: true,
+                    src: 'tmp/MDwiki.js',
+                    dest: 'unittests/lib/'
+                },
+                {
+                    expand: true,
+                    flatten: true,
+                    src: 'bower_components/jquery/jquery.min.js',
+                    dest: 'unittests/lib/'
+                }]
             }
         },
         shell: {
@@ -195,51 +235,65 @@ module.exports = function(grunt) {
                 'Gruntfile.js',
                 'js/*.js',
                 'js/**/*.js',
+                'js/ts/**/*.ts',
+                'unittests/**/*.js',
+                'unittests/**/*.html',
                 'index.tmpl'
             ],
-            tasks: ['devel']
+            tasks: ['debug','reload' ]
         },
         reload: {
             port: 35729,
             liveReload: {}
+        },
+        'http-server': {
+            'dev': {
+                root:'./',
+                port: 8080,
+                host: "0.0.0.0",
+                cache: 1,
+                showDir : true,
+                autoIndex: true,
+                defaultExt: "html",
+                runInBackground: true
+            }
         }
     });
 
-    // These plugins provide necessary tasks.
-    grunt.loadNpmTasks('grunt-contrib-jshint');
-    grunt.loadNpmTasks('grunt-contrib-watch');
-    grunt.loadNpmTasks('grunt-contrib-copy');
-    grunt.loadNpmTasks('grunt-contrib-concat');
-    grunt.loadNpmTasks('grunt-contrib-uglify');
-    grunt.loadNpmTasks('grunt-shell');
-    grunt.loadNpmTasks('grunt-reload');
-
-    grunt.registerTask('index_slim', 'Generate slim mdwiki.html, most scripts on CDN', function() {
-        createIndex(grunt, 'slim');
+    /*** CUSTOM CODED TASKS ***/
+    grunt.registerTask('index', 'Generate mdwiki.html, inline all scripts', function() {
+        createIndex(grunt, 'release');
     });
 
-    grunt.registerTask('index_fat', 'Generate mdwiki-fat.html, inline all scripts', function() {
-        createIndex(grunt, 'fat');
-    });
-    grunt.registerTask('index_debug', 'Generate mdwiki-fat.html, inline all scripts', function() {
+    /* Debug is basically the releaes version but without any minifing */
+    grunt.registerTask('index_debug', 'Generate mdwiki-debug.html, inline all scripts unminified', function() {
         createIndex(grunt, 'debug');
     });
-    grunt.registerTask('release-slim',[  'jshint', 'concat:dev', 'uglify:dist', 'index_slim' ]);
-    grunt.registerTask('release-fat', [ 'jshint', 'concat:dev', 'uglify:dist', 'index_fat' ]);
 
-    /* Debug is basically the fat version but without any minifing */
-    grunt.registerTask('release-debug', [ 'jshint', 'concat:dev', 'index_debug' ]);
+    grunt.registerTask('assembleTemplates', 'Adds a script tag with id to each template', function() {
+        var templateString = '';
+        grunt.file.recurse('templates/', function(abspath, rootdir, subdir, filename){
+            var intro = '<script type="text/html" id="/' + rootdir.replace('/','') + '/' + subdir.replace('/','') + '/' + filename.replace('.html','') + '">\n';
+            var content = grunt.file.read(abspath);
+            var outro = '</script>\n';
+            templateString += intro + content + outro;
+        });
+        grunt.file.write('tmp/templates.html', templateString);
+    });
 
-    grunt.registerTask('devel', [ 'release-debug', 'reload', 'watch' ]);
+    /*** NAMED TASKS ***/
+    grunt.registerTask('release', [ 'jshint', 'typescript', 'less:min', 'assembleTemplates', 'concat:dev', 'uglify:dist', 'index' ]);
+    grunt.registerTask('debug', [ 'jshint', 'typescript', 'less:dev', 'assembleTemplates', 'concat:dev',  'index_debug' ]);
+    grunt.registerTask('devel', [ 'debug', 'server', 'unittests', 'reload', 'watch' ]);
+    grunt.registerTask('unittests', [ 'copy:unittests' ]);
 
-    grunt.registerTask('release',[
-        'release-slim', 'release-fat', 'release-debug',
-        'copy:release_slim', 'copy:release_fat', 'copy:release_debug', 'copy:release_templates',
+    grunt.registerTask('server', [ 'http-server:dev' ]);
+
+    grunt.registerTask('distrelease',[
+        'release', 'debug',
+        'copy:release', 'copy:release_debug', 'copy:release_templates',
         'shell:zip_release'
     ]);
-    // Default task.
-    grunt.registerTask('default',
-        [ 'release-slim', 'release-fat', 'release-debug' ]
-    );
-
+    // Default task
+    grunt.registerTask('default', [ 'release', 'debug' ] );
 };
