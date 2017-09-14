@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: na
 title: "Example content"
 ---
 
