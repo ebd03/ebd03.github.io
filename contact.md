@@ -8,7 +8,6 @@ If you have questions at all - feel free to contact me!
 
 <form name="htmlform" method="post" action="html_form_send.php">
 <table width="450px">
-</tr>
 <tr>
  <td valign="top">
   <label for="first_name">First Name *</label>
@@ -54,7 +53,7 @@ If you have questions at all - feel free to contact me!
 </tr>
 <tr>
  <td colspan="2" style="text-align:center">
-  <input type="submit" value="Submit">   ( <a href="http://www.freecontactform.com/html_form.php">HTML Form</a> )
+  <input type="submit" value="Submit">
  </td>
 </tr>
 </table>
