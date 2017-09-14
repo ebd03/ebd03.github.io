@@ -7,10 +7,16 @@ tagline: Feel free to contact me
 If you have questions at all - feel free to contact me!
 
 
-<form action="https://getsimpleform.com/messages?form_api_token=5fa0a595a9f168652764f77005c9c7c0" method="post">
-  Name: <input type="text"><br>
-  Email: <input type="text"><br>
-  <input type='submit' value='Test form' />
-</form>
+<!-- Do not change the code! -->
+<a id="foxyform_embed_link_896653" href="http://www.foxyform.com/">foxyform</a>
+<script type="text/javascript">
+(function(d, t){
+   var g = d.createElement(t),
+       s = d.getElementsByTagName(t)[0];
+   g.src = "http://www.foxyform.com/js.php?id=896653&sec_hash=637536b9b80&width=350px";
+   s.parentNode.insertBefore(g, s);
+}(document, "script"));
+</script>
+<!-- Do not change the code! -->
 
 [Go to the Home Page]({{ site.url }}{{ site.baseurl }})
