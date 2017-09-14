@@ -6,7 +6,7 @@ tagline: Feel free to contact me
 
 If you have questions at all - feel free to contact me!
 
-<form name="htmlform" method="post" action="html_form_send.php">
+<form name="htmlform" action="https://getsimpleform.com/messages?form_api_token=5fa0a595a9f168652764f77005c9c7c0" method="post">
 <table width="450px">
 <tr>
  <td valign="top">
